@@ -9,8 +9,6 @@ class state:
     goalState = [1, 2, 3, 8, 0, 4, 7, 6, 5]
     boardState = []
     previousState = []
-    heuristic = 0
-    distance = 0
 
     #initiate the board with given numbers
     def __init__(self, numbers):
@@ -66,8 +64,17 @@ class state:
                 for x in self.previousState:
                     if i == x:
                         del possibleStates[count]
-
         return possibleStates
+
+class astar:
+    h = 0;
+    g = 1;
+    f = 0;
+    def __init__(self, state, state):
+       for i in possibleStates:
+        self.h = state.calculateHeuristic(i)
+        self.f = self.h + self.g
+
 
 
 numbers = list(range(0, 9))
@@ -75,6 +82,6 @@ shuffle(numbers)
 stuff = state(numbers)
 stuff.print_state(stuff.boardState)
 print()
-stuff.possibleMoves(stuff.boardState)
 
+stuff2 = astar(stuff.possibleMoves(stuff.boardState), stuff)
 
