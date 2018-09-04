@@ -1,4 +1,4 @@
-from heapq import heappush, heappop
+import heapq
 from random import shuffle
 import time
 import random
@@ -70,11 +70,10 @@ class astar:
     h = 0;
     g = 1;
     f = 0;
-    def __init__(self, state, state):
-       for i in possibleStates:
-        self.h = state.calculateHeuristic(i)
+    def __init__(self, board, totalMove, state):
+        self.g = totalMove
+        self.h = state.calculateHeuristic(board)
         self.f = self.h + self.g
-
 
 
 numbers = list(range(0, 9))
@@ -82,6 +81,11 @@ shuffle(numbers)
 stuff = state(numbers)
 stuff.print_state(stuff.boardState)
 print()
-
-stuff2 = astar(stuff.possibleMoves(stuff.boardState), stuff)
-
+queue = []
+totalMove = 0
+for i in stuff.possibleMoves(stuff.boardState):
+    stuff2 = astar(i, 0, stuff)
+    heapq.heappush(queue, (stuff2.f, i ))
+while queue:
+    next_item = heapq.heappop(queue)
+    stuff.print_state(next_item)
