@@ -11,20 +11,8 @@ class state:
     def __lt__(self, other):
         return state
 
-    def __hash__(self):
-        """Return hash code of object.
-        Used for comparing elements in set
-        """
-        h = [0, 0, 0]
-        h[0] = self.board[0] << 6 | self.board[1] << 3 | self.board[2]
-        h[1] = self.board[3] << 6 | self.board[4] << 3 | self.board[5]
-        h[2] = self.board[6] << 6 | self.board[7] << 3 | self.board[8]
-
-        h_val = 0
-        for h_i in h:
-            h_val = h_val * 31 + h_i
-
-        return h_val
+    def __eq__(self, other):
+        return self.boardState == other.boardState
 
     # initiate the board with given numbers
     def __init__(self, numbers, prev_state = None):
@@ -101,17 +89,17 @@ class PriorityQueue:
     def  __init__(self):
         self.heap = []
 
-    def push(self,priority, count, item):
+    def push(self,priority, item):
         # FIXME: restored old behaviour to check against old results better
         # FIXED: restored to stable behaviour
-        entry = (priority, count, item)
+        entry = (priority,  item)
         # entry = (priority, item)
         heapq.heappush(self.heap, entry)
 
     def pop(self):
-        (_, count, item) = heapq.heappop(self.heap)
+        (_, item) = heapq.heappop(self.heap)
         #  (_, item) = heapq.heappop(self.heap)
-        return count,item
+        return item
 
     def isEmpty(self):
         return len(self.heap) == 0
@@ -123,46 +111,54 @@ class solver:
     priotity_queue = PriorityQueue()
     previousState = []
     goalState = [1,2,3,8,0,4,7,6,5]
-
+    state = []
 
     def start(self):
-        initialState = state([2,8,3,1,6,4,7,0,5])
+        initialState = state([0,6,5,4,1,7,3,2,8])
         initialState.print_state(initialState.boardState)
         #searcher = astar(initialState.boardState, self.totalMove, initialState)
-        self.priotity_queue.push(0, self.totalMove , initialState)
+        self.priotity_queue.push(0, initialState)
 
         print()
 
         while not self.priotity_queue.isEmpty():
 
-            tuple = self.priotity_queue.pop()
-            current = tuple[1]
-            if(current.boardState == self.goalState):
+            current = self.priotity_queue.pop()
+            if current.boardState == self.goalState:
                 path = []
                # path.append(initialState.boardState)
-                while not current.parent == None:
+                while not current.parent is None:
                     path.append(current.boardState)
                     current = current.parent
                 path.reverse()
-                for count, i in enumerate(path, start = 0):
+                for count, i in enumerate(path, start = 1):
                     print("Step:",count)
                     print(current.print_state(i))
 
                 break;
 
-            self.previousState.append(current.boardState)
+            self.previousState.append(current)
 
             for i in current.possibleMoves(current.boardState):
-                nextMove = state(i, current)
-                searcher = astar(nextMove.boardState, self.totalMove, nextMove)
-                #print(searcher.f)
-                if nextMove.boardState in self.previousState:
-                    continue
-                else:
-                    self.priotity_queue.push(searcher.f, self.totalMove , nextMove)
+                    nextMove = state(i, current)
+                    searcher = astar(nextMove.boardState, nextMove.step, nextMove)
+                   # nextMove.print_state(nextMove.boardState)
+                    #print("state:", nextMove.step, "f:", searcher.f, "h:", searcher.h)
 
-                #print("state:", self.totalMove, "f:", searcher.f, "h:", searcher.h)
-                #current.print_state(current.boardState)
+                    if nextMove in self.previousState:
+                        index = self.previousState.index(nextMove)
+                        if nextMove.step < self.previousState[index].step:
+                            print("shit")
+                            del self.previousState[index]
+                            self.previousState.append(nextMove)
+                        continue
+                    else:
+                        self.priotity_queue.push(searcher.f, nextMove)
+
+
+
+
+
 
 
 
