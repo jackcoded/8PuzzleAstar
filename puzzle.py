@@ -1,4 +1,5 @@
 import heapq
+import math
 from random import shuffle
 import time
 import random
@@ -8,8 +9,13 @@ class state:
     boardState = []
     parent = []
     step = 0
+    h = 0
+    g = 0
+    f = 0
+
+
     def __lt__(self, other):
-        return state
+        return
 
     def __eq__(self, other):
         return self.boardState == other.boardState
@@ -21,8 +27,10 @@ class state:
         self.step = 0
         if self.parent:
             self.step = self.parent.step + 1
+        self.h = self.manhattan(self.boardState)
+        self.f = self.step + self.h
 
-# prints the board
+    # prints the board
     def print_state(self, state):
         for count, i in enumerate(state, start=1):
             print(i, end=" ")
@@ -36,6 +44,38 @@ class state:
         # self.print_state(newState)
         # print(newState[source], "-", move)
         return newState
+
+    def manhattan(self, board):
+        distance = 0
+        col = 0
+        row = 0
+        #print(board)
+        goalState = [1,2,3,8,0,4,7,6,5]
+        for i in board:
+            if i is not 0:
+                #print(i)
+                displacement = abs(goalState.index(i) - board.index(i))
+                if abs(int(math.floor(goalState.index(i) / 3)) - int(math.floor(board.index(i) / 3))) == 0:
+                    distance += displacement
+                    #print("method 1,  distance",displacement)
+                elif abs(goalState.index(i) % 3 - board.index(i) % 3) == 0:
+                    #print ("method 2, distance",int(math.floor(displacement / 3)))
+                    distance += int(math.floor(displacement / 3))
+                else:
+                    # found the amount of column between goal
+                    col = displacement % 3
+                    #print("col", col)
+                    # found the amount of row between goal
+                    # round down
+                    row = int(math.floor(displacement / 3))
+                    #print("row", row)
+                    distance += row + col
+                    #print("method 3, distance ", row + col+2)
+                    if abs(goalState.index(i) % 3 - board.index(i) % 3) == 2 and displacement % 3 == 1:
+                        distance += 2
+                        #print("method 4 +2 ")
+        #print("H value is", distance)
+        return distance
 
     #hamming heuristic
     def calculateHeuristic(self, state):
@@ -71,18 +111,7 @@ class state:
 
         return possibleStates
 
-class astar:
-    h = 0
-    g = 0
-    f = 0
 
-    def __init__(self, board, totalMove, state):
-        # initialise total move
-        self.g = totalMove
-        # gets heuristic value
-        self.h = state.calculateHeuristic(board)
-        # f = g + h
-        self.f = self.g + self.h
 
 class PriorityQueue:
 
@@ -114,53 +143,55 @@ class solver:
     state = []
 
     def start(self):
-        initialState = state([0,6,5,4,1,7,3,2,8])
+        initialState = state([2,0,4,1,3,5,7,8,6])
         initialState.print_state(initialState.boardState)
         #searcher = astar(initialState.boardState, self.totalMove, initialState)
         self.priotity_queue.push(0, initialState)
 
         print()
 
-        while not self.priotity_queue.isEmpty():
+        found = False
+        while not self.priotity_queue.isEmpty() and found == False:
 
             current = self.priotity_queue.pop()
-            if current.boardState == self.goalState:
-                path = []
-               # path.append(initialState.boardState)
-                while not current.parent is None:
-                    path.append(current.boardState)
-                    current = current.parent
-                path.reverse()
-                for count, i in enumerate(path, start = 1):
-                    print("Step:",count)
-                    print(current.print_state(i))
 
-                break;
+            for i in current.possibleMoves(current.boardState):
+                nextMove = state(i, current)
+                # nextMove.print_state(nextMove.boardState)
+                #print("state:", nextMove.step, "f:", searcher.f, "h:", searcher.h)
+
+                if nextMove.boardState == self.goalState:
+                    path = []
+                    # path.append(initialState.boardState)
+                    while not nextMove.parent is None:
+                        path.append(nextMove)
+                        nextMove = nextMove.parent
+                    path.reverse()
+                    for count, i in enumerate(path, start = 1):
+                        print("Step:", i.step, "F:", i.f,  "h:", i.h)
+                        print(nextMove.print_state(i.boardState))
+                    found = True
+                    break;
+
+                if nextMove in self.previousState:
+                    index = self.previousState.index(nextMove)
+                    #print(nextMove.step, "     1")
+                    #print(self.previousState[index].step, "     2")
+                    if self.previousState[index].step > nextMove.step:
+                        del self.previousState[index]
+                        self.previousState.append(nextMove)
+                else:
+                    self.priotity_queue.push(nextMove.f, nextMove)
+
 
             self.previousState.append(current)
 
-            for i in current.possibleMoves(current.boardState):
-                    nextMove = state(i, current)
-                    searcher = astar(nextMove.boardState, nextMove.step, nextMove)
-                   # nextMove.print_state(nextMove.boardState)
-                    #print("state:", nextMove.step, "f:", searcher.f, "h:", searcher.h)
-
-                    if nextMove in self.previousState:
-                        index = self.previousState.index(nextMove)
-                        if nextMove.step < self.previousState[index].step:
-                            print("shit")
-                            del self.previousState[index]
-                            self.previousState.append(nextMove)
-                        continue
-                    else:
-                        self.priotity_queue.push(searcher.f, nextMove)
 
 
 
-
-
-
-
-
-game = solver()
-game.start()
+if __name__ == '__main__':
+    #something = state([6,5,7,3,0,2,8,4,1])
+    #something.manhattan([6,5,7,3,0,2,8,4,1])
+    #something.manhattan([6,5,7,3,4,2,8,1,0])
+    game = solver()
+    game.start()
