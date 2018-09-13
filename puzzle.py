@@ -51,7 +51,7 @@ class state:
         distance = 0
         col = 0
         row = 0
-        #print(board)
+        #self.print_state(board)
         goalState = [1,2,3,8,0,4,7,6,5]
         for i in board:
             if i is not 0:
@@ -72,14 +72,14 @@ class state:
                     # found the amount of row between goal
                     # round down
                     row = int(math.floor(displacement / 3))
-                    #print("row", row)
+                   # print("row", row)
                     distance += row + col
-                    #print("method 3, distance ", row + col+2)
+                   # print("method 3, distance ", row + col+2)
                     #for edge cases for 4 moves
                     if abs(goalState.index(i) % 3 - board.index(i) % 3) == 2 and displacement % 3 == 1:
                         distance += 2
-                        #print("method 4 +2 ")
-        #print("H value is", distance)
+                       # print("method 4 +2 ")
+       # print("H value is", distance)
         return distance
 
     #hamming heuristic
@@ -146,11 +146,12 @@ class solver:
     priotity_queue = PriorityQueue()
     previousState = []
     goalState = [1,2,3,8,0,4,7,6,5]
-    state = []
-
+    initial = []
+    def __init__(self, numbers):
+        self.initial = numbers
     def start(self):
         print("starting state")
-        initialState = state([6,5,7,4,2,1,3,8,0], None, "nothing")
+        initialState = state(self.initial, None, "nothing")
         initialState.print_state(initialState.boardState)
         #searcher = astar(initialState.boardState, self.totalMove, initialState)
         self.priotity_queue.push(0, initialState)
@@ -195,8 +196,12 @@ class solver:
 
 
 if __name__ == '__main__':
-    #something = state([6,5,7,3,0,2,8,4,1])
+    #something = state([6,5,7,3,0,2,8,4,1], None, "nothing")
     #something.manhattan([6,5,7,3,0,2,8,4,1])
     #something.manhattan([6,5,7,3,4,2,8,1,0])
-    game = solver()
+    numbers = input('Numbers(nospace and range 0-8): ')
+    numberlist = []
+    for i in numbers:
+        numberlist.append(int(i))
+    game = solver(numberlist)
     game.start()
