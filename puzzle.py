@@ -12,7 +12,7 @@ class state:
     h = 0
     g = 0
     f = 0
-
+    move = "nothing"
 
     def __lt__(self, other):
         return
@@ -21,7 +21,7 @@ class state:
         return self.boardState == other.boardState
 
     # initiate the board with given numbers
-    def __init__(self, numbers, prev_state = None):
+    def __init__(self, numbers, prev_state, movement):
         self.boardState = numbers
         self.parent = prev_state
         self.step = 0
@@ -29,6 +29,7 @@ class state:
             self.step = self.parent.step + 1
         self.h = self.manhattan(self.boardState)
         self.f = self.step + self.h
+        self.move = movement
 
     # prints the board
     def print_state(self, state):
@@ -38,13 +39,14 @@ class state:
                 print()
 
     # moves block by switching array element
-    def state_move_block(self, boardState, source, dest, move):
+    def state_move_block(self, boardState, source, dest):
         newState = list(boardState)
         newState[source], newState[dest] = newState[dest], newState[source]
         # self.print_state(newState)
         # print(newState[source], "-", move)
         return newState
 
+    #Counts the total moves by blocks to get the destination from source
     def manhattan(self, board):
         distance = 0
         col = 0
@@ -55,9 +57,11 @@ class state:
             if i is not 0:
                 #print(i)
                 displacement = abs(goalState.index(i) - board.index(i))
+                #for same row
                 if abs(int(math.floor(goalState.index(i) / 3)) - int(math.floor(board.index(i) / 3))) == 0:
                     distance += displacement
                     #print("method 1,  distance",displacement)
+               #for same column
                 elif abs(goalState.index(i) % 3 - board.index(i) % 3) == 0:
                     #print ("method 2, distance",int(math.floor(displacement / 3)))
                     distance += int(math.floor(displacement / 3))
@@ -71,6 +75,7 @@ class state:
                     #print("row", row)
                     distance += row + col
                     #print("method 3, distance ", row + col+2)
+                    #for edge cases for 4 moves
                     if abs(goalState.index(i) % 3 - board.index(i) % 3) == 2 and displacement % 3 == 1:
                         distance += 2
                         #print("method 4 +2 ")
@@ -81,6 +86,7 @@ class state:
     def calculateHeuristic(self, state):
         goalState = [1,2,3,8,0,4,7,6,5]
         wrongtile = 0
+        #counts the wrong tiles
         for count, i in enumerate(state, start=0):
             if i == 0:
                 continue
@@ -90,25 +96,25 @@ class state:
         return wrongtile
 
     # finds the possible moves at given location on the board
-    def possibleMoves(self, boardState):
-        index = boardState.index(0)
+    def possibleMoves(self):
+        index = self.boardState.index(0)
         possibleStates = list([])
-        # checks if 0 is on the top, up move is available
-        if not index > 5:
-            possibleStates.append(self.state_move_block(boardState, index, index + 3, "up"))
 
+        # checks if 0 is on the top, up move is available
+        #generate states
+        if not index > 5:
+            possibleStates.append(state(self.state_move_block(self.boardState, index, index + 3), self, "up"))
         # checks if 0 is on the bottom,down move is available
         if not index < 2:
-            possibleStates.append(self.state_move_block(boardState, index, index - 3, "down"))
-
+            possibleStates.append(state(self.state_move_block(self.boardState, index, abs(index - 3)), self, "down"))
         # checks if 0 is on the left side, right move is available
         if not index % 3 == 0:
-            possibleStates.append(self.state_move_block(boardState, index, index - 1, "right"))
+            possibleStates.append(state(self.state_move_block(self.boardState,  index, abs(index - 1)), self, "left"))
 
         # checks if 0 is on the right side, left move is available
         if not index % 3 == 2:
-            possibleStates.append(self.state_move_block(boardState, index, index + 1, "left"))
-
+            possibleStates.append(state(self.state_move_block(self.boardState, index, index + 1), self, "right"))
+        #generate states all the states
         return possibleStates
 
 
@@ -143,48 +149,47 @@ class solver:
     state = []
 
     def start(self):
-        initialState = state([2,0,4,1,3,5,7,8,6])
+        print("starting state")
+        initialState = state([6,5,7,4,2,1,3,8,0], None, "nothing")
         initialState.print_state(initialState.boardState)
         #searcher = astar(initialState.boardState, self.totalMove, initialState)
         self.priotity_queue.push(0, initialState)
-
+        self.previousState.append(initialState)
         print()
 
-        found = False
-        while not self.priotity_queue.isEmpty() and found == False:
+        while not self.priotity_queue.isEmpty():
 
             current = self.priotity_queue.pop()
+            if current.boardState == self.goalState:
+                path = []
+                # path.append(initialState.boardState)
+                while not current.parent is None:
+                    path.append(current)
+                    current = current.parent
+                path.reverse()
+                for count, i in enumerate(path, start = 1):
+                    print("Step:", i.step, "F:", i.f,  "h:", i.h, "move:", i.move)
+                    print(current.print_state(i.boardState))
+                break;
 
-            for i in current.possibleMoves(current.boardState):
-                nextMove = state(i, current)
-                # nextMove.print_state(nextMove.boardState)
-                #print("state:", nextMove.step, "f:", searcher.f, "h:", searcher.h)
+            #generate all possible moves
+            for i in current.possibleMoves():
 
-                if nextMove.boardState == self.goalState:
-                    path = []
-                    # path.append(initialState.boardState)
-                    while not nextMove.parent is None:
-                        path.append(nextMove)
-                        nextMove = nextMove.parent
-                    path.reverse()
-                    for count, i in enumerate(path, start = 1):
-                        print("Step:", i.step, "F:", i.f,  "h:", i.h)
-                        print(nextMove.print_state(i.boardState))
-                    found = True
-                    break;
+                #nextMove.print_state(nextMove.boardState)
+                #print("Step:", nextMove.step, "F:", nextMove.f,  "h:", nextMove.h)
 
-                if nextMove in self.previousState:
-                    index = self.previousState.index(nextMove)
+                #checks if the move is from previous
+                if i in self.previousState:
+                    index = self.previousState.index(i)
+                    #nextMove.print_state(nextMove.boardState)
                     #print(nextMove.step, "     1")
                     #print(self.previousState[index].step, "     2")
-                    if self.previousState[index].step > nextMove.step:
+                    if self.previousState[index].step > i.step:
                         del self.previousState[index]
-                        self.previousState.append(nextMove)
+                        self.previousState.append(i)
                 else:
-                    self.priotity_queue.push(nextMove.f, nextMove)
-
-
-            self.previousState.append(current)
+                    self.priotity_queue.push(i.f, i)
+            #self.previousState.append(current)
 
 
 
